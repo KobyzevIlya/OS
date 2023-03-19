@@ -55,18 +55,6 @@ int main(int argc, char *argv[]) {
     strcpy(input_filename, argv[1]); // получение имен файлов из командной строки
     strcpy(output_filename, argv[2]);
 
-    // открытие файла для чтения
-    if ((input_descriptor = open(input_filename, O_RDONLY)) == -1) {
-        printf("->Error with opening input file\n");
-        exit(10);
-    }
-
-    // открытие файла для записи. Если его нет, он будет создан. Если он уже существует, содержимое удалится
-    if ((output_descriptor = open(output_filename, O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1) {
-        printf("->Error with opening output file\n");
-        exit(10);
-    }
-
     if (pipe(fd1) < 0) { // создание первого канала
         printf("->Reader: can't open pipe<-\n");
         exit(10);
@@ -88,6 +76,12 @@ int main(int argc, char *argv[]) {
         printf("->Reader: can't fork process1<-\n");
         exit(10);
     } else if (process1 > 0) { //parent
+        // открытие файла для чтения
+        if ((input_descriptor = open(input_filename, O_RDONLY)) == -1) {
+            printf("->Error with opening input file\n");
+            exit(10);
+        }
+        
         if (close(fd1[0]) < 0) {
             printf("->Reader: can't close reading side of pipe<-\n");
             exit(10);
@@ -100,7 +94,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (size < 0) size = 0;
-        write(fd1[1], buffer, size); // запись текста из буфера в канал
+        size = write(fd1[1], buffer, size); // запись текста из буфера в канал
         if (size < 0) {
             printf("->Reader: error with writing<-\n");
             exit(10);
@@ -108,6 +102,12 @@ int main(int argc, char *argv[]) {
 
         if (close(fd1[1]) < 0) {
             printf("->Reader: can't close writing side of pipe<-\n");
+            exit(10);
+        }
+
+        // закрытие файла
+        if (close(input_descriptor) != 0) {
+            printf("->Error with closing input file<-\n");
             exit(10);
         }
         
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
             }
 
             if (size < 0) size = 0;
-            write(fd2[1], buffer, size); // запись текста из буфера во второй канал
+            size = write(fd2[1], buffer, size); // запись текста из буфера во второй канал
             if (size < 0) {
                 printf("->Handler: error with writing<-\n");
                 exit(10);
@@ -173,6 +173,12 @@ int main(int argc, char *argv[]) {
             wait(NULL);
             printf("->Handler: exit<-\n");
         } else { //child-child
+            // открытие файла для записи. Если его нет, он будет создан. Если он уже существует, содержимое удалится
+            if ((output_descriptor = open(output_filename, O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1) {
+                printf("->Error with opening output file\n");
+                exit(10);
+            }
+            
             if (close(fd2[1]) < 0) {
                 printf("->Writer: can't close writing side of pipe<-\n");
                 exit(10);
@@ -190,13 +196,8 @@ int main(int argc, char *argv[]) {
             }
 
             write(output_descriptor, buffer, strlen(buffer)); // запись текста из буфера в файл
-            
-            // закрытие файлов
-            if (close(input_descriptor) != 0) {
-                printf("->Error with closing input file<-\n");
-                exit(10);
-            }
 
+            // закрытие файла
             if (close(output_descriptor) != 0) {
                 printf("->Error with closing output file<-\n");
                 exit(10);
