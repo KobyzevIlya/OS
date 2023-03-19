@@ -1,2 +1,6 @@
-# OS
-Homeworks in the Operating Systems course at HSE
+# ИДЗ курсе Операциооные системы ВШЭ
+## Автор: Кобызев Илья Сергеевич
+## Группа: БПИ213
+
+### Описание
+- [`idz1`](https://www.youtube.com/watch?v=dQw4w9WgXcQ): первое ИДЗ
