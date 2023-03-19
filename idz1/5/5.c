@@ -44,8 +44,8 @@ int main(int argc, char *argv[]) {
     int input_descriptor;
     int output_descriptor;
 
-    char fd1_name[] = "fd1";
-    char fd2_name[] = "fd2";
+    char fd1_name[] = "fd1"; // первый именованный канал
+    char fd2_name[] = "fd2"; // второй именованный канал
     int fd1;
     int fd2;
 
@@ -81,18 +81,18 @@ int main(int argc, char *argv[]) {
             exit(10);
         }
 
-        if ((fd1 = open(fd1_name, O_WRONLY)) < 0) {
+        if ((fd1 = open(fd1_name, O_WRONLY)) < 0) { // открытие первого канала
             printf("->Reader: error with open FIFO for writing<-\n");
             exit(10);
         }
 
-        size = write(fd1, buffer, size);
+        size = write(fd1, buffer, size); // запись из буфера в канал
         if (size < 0) {
             printf("->Reader: error with writing<-\n");
             exit(10);
         }
         
-        if (close(fd1) != 0) {
+        if (close(fd1) != 0) { // закрытие канала
             printf("->Reader: error with closing fifo<-\n");
             exit(10);
         }
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
                 exit(10);
             }
 
-            int size = read(fd1, buffer, BUF_SIZE);
+            int size = read(fd1, buffer, BUF_SIZE); // чтение из канала в буфер
             if (size < 0) {
                 printf("->Handler: error with reading file<-\n");
                 exit(10);
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
                 exit(10);
             }
 
-            size = write(fd2, buffer, size);
+            size = write(fd2, buffer, size); // запись из буфера в канал 2
             if (size < 0) {
                 printf("->Handler: error with writing<-\n");
                 exit(10);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
             
             write(output_descriptor, buffer, strlen(buffer)); // запись текста из буфера в файл
             
-            // закрытие файлов
+            // закрытие файла
             if (close(output_descriptor) != 0) {
                 printf("->Error with closing output file<-\n");
                 exit(10);
