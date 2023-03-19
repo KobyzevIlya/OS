@@ -10,3 +10,5 @@
 - [`4`](https://github.com/KobyzevIlya/OS/tree/master/idz1/4): работа на 4
 - [`5`](https://github.com/KobyzevIlya/OS/tree/master/idz1/5): работа на 5
 - [`6`](https://github.com/KobyzevIlya/OS/tree/master/idz1/6): работа на 6
+- [`7`](https://github.com/KobyzevIlya/OS/tree/master/idz1/7): работа на 7
+- [`8`](https://github.com/KobyzevIlya/OS/tree/master/idz1/8): работа на 8
