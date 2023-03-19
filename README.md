@@ -1,2 +1,6 @@
-# OS
-Homeworks in the Operating Systems course at HSE
+# ИДЗ курсе Операционные системы ВШЭ
+## Автор: Кобызев Илья Сергеевич
+## Группа: БПИ213
+
+### Описание
+- [`idz1`](https://github.com/KobyzevIlya/OS/tree/master/idz1): первое ИДЗ
