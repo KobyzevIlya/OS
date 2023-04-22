@@ -10,19 +10,16 @@
 #include <signal.h>
 
 #define BUFFER_SIZE 256
+#define SHM_SIZE 4096
 
 int shm;
 const char *shm_name = "shared_memory";
 void *shm_ptr;
 
-sem_t *start_sem;
-const char *start_sem_name = "start_sem_name";
-sem_t *end_sem;
-const char *end_sem_name = "end_sem_name";
-sem_t *result_sem_start;
-const char *result_sem_start_name = "result_sem_start_name";
-sem_t *result_sem_end;
-const char *result_sem_end_name = "result_sem_end_name";
+int shm_semaphores;
+const char *shm_semaphores_name = "shared_memory_semaphores";
+sem_t* semaphores;
+
 
 void clear_all() {
     if (munmap(shm_ptr, BUFFER_SIZE) == -1) {
@@ -31,30 +28,16 @@ void clear_all() {
     if (shm_unlink(shm_name) == -1) {
         perror("Incorrect shm_unlink");
     }
-    if (sem_close(start_sem) == -1) {
-        perror("Incorrect close of start semaphore");
+    if (munmap(semaphores, SHM_SIZE) == -1) {
+        perror("Incorrect munmap");
     }
-    if (sem_close(end_sem) == -1) {
-        perror("Incorrect close of end semaphore");
+    if (shm_unlink(shm_semaphores_name) == -1) {
+        perror("Incorrect shm_unlink");
     }
-    if (sem_close(result_sem_start) == -1) {
-        perror("Incorrect close of result start semaphore");
-    }
-    if (sem_close(result_sem_end) == -1) {
-        perror("Incorrect close of result end semaphore");
-    }
-    if (sem_unlink(start_sem_name) == -1) {
-        perror("Incorrect unlink of start semaphore");
-    }
-    if (sem_unlink(end_sem_name) == -1) {
-        perror("Incorrect unlink of end semaphore");
-    }
-    if (sem_unlink(result_sem_start_name) == -1) {
-        perror("Incorrect unlink of result start semaphore");
-    }
-    if (sem_unlink(result_sem_end_name) == -1) {
-        perror("Incorrect unlink of result end semaphore");
-    }
+    sem_destroy(&semaphores[0]);
+    sem_destroy(&semaphores[1]);
+    sem_destroy(&semaphores[2]);
+    sem_destroy(&semaphores[3]);
 }
 
 void handle_sigint(int sig) {
@@ -95,25 +78,32 @@ int main(int argc, char *argv[]) {
         exit(10);
     }
 
-    if ((start_sem = sem_open(start_sem_name, O_CREAT, 0666, 0)) == 0) {
-        perror("->Can't create start semaphore<-\n");
+    /*
+    0 = start
+    1 = end
+    2 = result_start
+    3 = result_end
+    */
+
+    if ((shm_semaphores = shm_open(shm_semaphores_name, O_CREAT | O_RDWR, 0666)) == -1) {
+        perror("->Can't create shared memory<-\n");
         exit(10);
     }
 
-    if ((end_sem = sem_open(end_sem_name, O_CREAT, 0666, 0)) == 0) {
-        perror("->Can't create end semaphore<-\n");
+    if (ftruncate(shm_semaphores, SHM_SIZE) == -1) {
+        perror("->Can't truncate shared memory<-\n");
         exit(10);
     }
 
-    if ((result_sem_start = sem_open(result_sem_start_name, O_CREAT, 0666, 0)) == 0) {
-        perror("->Can't create result start semaphore<-\n");
+    if ((semaphores = mmap(NULL, SHM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_semaphores, 0)) == MAP_FAILED) {
+        perror("->Can't mmap shared memory<-\n");
         exit(10);
     }
 
-    if ((result_sem_end = sem_open(result_sem_end_name, O_CREAT, 0666, 0)) == 0) {
-        perror("->Can't create result end semaphore<-\n");
-        exit(10);
-    }
+    sem_init(&semaphores[0], 1, 0);
+    sem_init(&semaphores[1], 1, 0);
+    sem_init(&semaphores[2], 1, 0);
+    sem_init(&semaphores[3], 1, 0); 
 
     // цикл поклонников
     for (int i = 0; i < number; ++i) {
@@ -124,19 +114,18 @@ int main(int argc, char *argv[]) {
             char valentine[BUFFER_SIZE];
             sprintf(valentine, "Unique valentine №%d. %s", i + 1, message_template);
 
-            sem_wait(start_sem);
-
+            sem_wait(&semaphores[0]);
                 // отправка валентинки
                 memcpy(shm_ptr, &valentine, strlen(valentine) + 1);
 
-            sem_post(end_sem);
+            sem_post(&semaphores[1]);
 
-            sem_wait(result_sem_start);
+            sem_wait(&semaphores[2]);
                 // отправка своего номера
                 memcpy(shm_ptr, &i, sizeof(int));
 
-                sem_post(start_sem);
-                sem_wait(end_sem);
+                sem_post(&semaphores[0]);
+                sem_wait(&semaphores[1]);
 
                 // получение ответав
                 int result;
@@ -146,7 +135,7 @@ int main(int argc, char *argv[]) {
                 } else {
                     printf("Admirer №%d will get drunk today\n", i + 1);
                 } 
-            sem_post(result_sem_end);
+            sem_post(&semaphores[3]);
 
             return 0;
         }
@@ -156,8 +145,8 @@ int main(int argc, char *argv[]) {
 
     // цикл принятия валентинок
     for (int i = 0; i < number; ++i) {
-        sem_post(start_sem);
-        sem_wait(end_sem);
+        sem_post(&semaphores[0]);
+        sem_wait(&semaphores[1]);
 
         // чтение валентинки
         memcpy(&buffer, shm_ptr, BUFFER_SIZE);
@@ -170,8 +159,8 @@ int main(int argc, char *argv[]) {
 
     // цикл отправки ответа
     for (int i = 0; i < number; ++i) {
-        sem_post(result_sem_start);
-            sem_wait(start_sem);
+        sem_post(&semaphores[2]);
+            sem_wait(&semaphores[0]);
 
                 // чтение номера поклонника
                 int admirer_number;
@@ -186,8 +175,8 @@ int main(int argc, char *argv[]) {
                     memcpy(shm_ptr, &result, sizeof(int));
                 }
 
-            sem_post(end_sem);
-        sem_wait(result_sem_end);
+            sem_post(&semaphores[1]);
+        sem_wait(&semaphores[3]);
     }
 
     clear_all();
