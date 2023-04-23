@@ -11,11 +11,11 @@ int main() {
     struct message msg;
     msg.mtype = 1;
     if ((key = ftok("common.h", 'a')) == -1) {
-        perror("ftok");
+        perror("->Admirer: error with ftok<-\n");
         exit(1);
     }
     if ((msgid = msgget(key, 0644 | IPC_CREAT)) == -1) {
-        perror("msgget");
+        perror("->Admirer: error with msgget<-\n");
         exit(1);
     }
 
@@ -35,7 +35,7 @@ int main() {
     // отправка валентинки
     strcpy(msg.mtext, valentine);
     if (msgsnd(msgid, &msg, sizeof(msg.mtext), 0) == -1) {
-        perror("msgsnd");
+        perror("->Admirer: error with msgsnd<-\n");
         exit(1);
     }
 
@@ -45,7 +45,7 @@ int main() {
     pid_t pid = getpid();
     snprintf(msg.mtext, BUFFER_SIZE, "%d", pid);
     if (msgsnd(msgid, &msg, sizeof(msg.mtext), 0) == -1) {
-        perror("msgsnd");
+        perror("->Admirer: error with msgsnd<-\n");
         exit(1);
     }
 
@@ -55,7 +55,7 @@ int main() {
     // получение ответа
     int result;
     if (msgrcv(msgid, &msg, sizeof(msg.mtext), 1, 0) == -1) {
-        perror("msgrcv");
+        perror("->Admirer: error with msgrcv<-\n");
         exit(1);
     }
     result = atoi(msg.mtext);

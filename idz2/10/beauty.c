@@ -2,7 +2,7 @@
 
 void clear_all() {
     if (msgctl(msgid, IPC_RMID, NULL) == -1) {
-        perror("msgctl");
+        perror("->Beauty: error with msgctl");
         exit(1);
     }
 
@@ -44,11 +44,11 @@ int main(int argc, char *argv[]) {
     struct message msg;
     msg.mtype = 1;
     if ((key = ftok("common.h", 'a')) == -1) {
-        perror("ftok");
+        perror("->Beauty: error with ftok<-\n");
         exit(1);
     }
     if ((msgid = msgget(key, 0644 | IPC_CREAT)) == -1) {
-        perror("msgget");
+        perror("->Beauty: error with msgget<-\n");
         exit(1);
     }
 
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < number; ++i) {
         // чтение валентинки
         if (msgrcv(msgid, &msg, BUFFER_SIZE, 1, 0) == -1) {
-            perror("msgrcv");
+            perror("->Beauty: error with msgrcv<-\n");
             exit(1);
         }
 
@@ -106,14 +106,14 @@ int main(int argc, char *argv[]) {
                     int result = 1;
                     snprintf(msg.mtext, BUFFER_SIZE, "%d", result);
                     if (msgsnd(msgid, &msg, sizeof(msg.mtext), 0) == -1) {
-                        perror("msgsnd");
+                        perror("->Beauty: error with msgsnd<-\n");
                         exit(1);
                     }
                 } else {
                     int result = 0;
                     snprintf(msg.mtext, BUFFER_SIZE, "%d", result);
                     if (msgsnd(msgid, &msg, sizeof(msg.mtext), 0) == -1) {
-                        perror("msgsnd");
+                        perror("->Beauty: error with msgsnd<-\n");
                         exit(1);
                     }
                 }

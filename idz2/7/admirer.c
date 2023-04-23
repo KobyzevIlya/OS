@@ -3,10 +3,12 @@
 int main() {
     char buffer[BUFFER_SIZE];
 
+    // ввод валентинки
     printf("->Admirer №%d thinks about his valentine<-\n", getpid());
     printf("->Enter your valentine:");
     scanf("%s", buffer);
 
+    // создание семафоров и разделяемой памяти
     if ((shm = shm_open(shm_name, O_CREAT | O_RDWR, 0666)) == -1) {
         perror("->Admirer: Can't create shared memory<-\n");
         exit(10);
