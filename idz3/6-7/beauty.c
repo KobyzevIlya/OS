@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     int port = atoi(argv[1]);
 
     int sockets[n];
+    int father;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
 
@@ -65,7 +66,32 @@ int main(int argc, char *argv[]) {
             return 10;
         }
     }
+    if ((father = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
+        perror("Accept error");
+        close(server_fd);
+        return 10;
+    }
+    char message[10];
+    for (int i = 0; i < n; ++i) {
+        ssize_t recv_result = recv(sockets[i], message, CHECK_MESSAGE_SIZE, 0);
+        if (recv_result <= 0) {
+            perror("Receive error");
+            return 10;
+        } else {
+            if (strcmp(message, "admirer") != 0) {
+                int tmp = sockets[i];
+                sockets[i] = father;
+                father = tmp;
+            } 
+        }
+    }
 
+    char report[512];
+    memset(report, '\0', sizeof(report));
+    sprintf(report, "Beauty is ready to accept valentines");
+    // report[strlen(report)] = '\0';
+    send(father, report, strlen(report) + 1, 0);
+    
     int count = 0;
     int it = 0;
     char buffer[BUFFER_SIZE];
@@ -84,25 +110,67 @@ int main(int argc, char *argv[]) {
             ++it;
             ++count;
             printf("Received message from admirer №%d.\nMessage: %s\n\n", it, buffer);
+
+            memset(report, '\0', sizeof(report));
+            sprintf(report, "Beauty received valentine №%d. Message: %s", it, buffer);
+            // report[strlen(report)] = '\0';
+            usleep(5000);
+            send(father, report, strlen(report) + 1, 0);
         }
     }
 
     int chosen = rand() % n;
     printf("Beauty carefully considered everything and chose the number %d\n", chosen + 1);
 
+    memset(report, '\0', sizeof(report));
+    sprintf(report, "Beauty carefully considered everything and chose the number %d", chosen + 1);
+    report[strlen(report)] = '\0';
+    usleep(5000);
+    send(father, report, strlen(report) + 1, 0);
+
     char yes[10] = "YES";
     yes[4] = '\0';
     char no[10] = "NO";
     no[3] = '\0';
     for (int i = 0; i < n; ++i) {
+        usleep(5000);
         if (i == chosen) {
             send(sockets[i], yes, strlen(yes) + 1, 0);
+
+            memset(report, '\0', sizeof(report));
+            sprintf(report, "Beauty sent YES to admirer №%d", i + 1);
+            report[strlen(report)] = '\0';
+            send(father, report, strlen(report) + 1, 0);
         } else {
             send(sockets[i], no, strlen(no) + 1, 0);
+
+            memset(report, '\0', sizeof(report));
+            sprintf(report, "Beauty sent NO to admirer №%d", i + 1);
+            report[strlen(report)] = '\0';
+            send(father, report, strlen(report) + 1, 0);
+        }
+    }
+
+    memset(report, '\0', sizeof(report));
+    sprintf(report, "Done");
+    report[5] = '\0';
+    usleep(5000);
+    send(father, report, strlen(report) + 1, 0);
+
+    while (1) {
+        ssize_t recv_result = recv(father, buffer, sizeof(buffer), 0);
+        if (recv_result == -1) {
+            perror("Receive error");
+            return 10;
+        } else if (recv_result == 0) {
+            continue;
+        } else {
+            break;
         }
     }
 
     close(server_fd);
+    close(father);
     for (int i = 0; i < n; ++i) {
         close(sockets[i]);
     }

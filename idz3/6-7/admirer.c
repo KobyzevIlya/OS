@@ -46,6 +46,10 @@ int main(int argc, char *argv[]) {
                 return 10;
             }
         } else {
+            char message[CHECK_MESSAGE_SIZE] = "admirer";
+            message[7] = '\0';
+            send(sock, message, CHECK_MESSAGE_SIZE, 0);
+
             break;
         }
     }

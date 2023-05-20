@@ -8,8 +8,6 @@ int main(int argc, char *argv[]) {
 
     printf("Your pid: %d\n", getpid());
 
-    char message_template[] = "Written with love after much thought. Template written using freevalentines.com, remove this sentence before sending.";
-
     char *server_ip = argv[1];
     int port = atoi(argv[2]);
 
@@ -46,41 +44,35 @@ int main(int argc, char *argv[]) {
                 return 10;
             }
         } else {
+            char message[CHECK_MESSAGE_SIZE] = "father";
+            message[6] = '\0';
+            send(sock, message, CHECK_MESSAGE_SIZE, 0);
+
             break;
         }
     }
 
-    char valentine[BUFFER_SIZE];
-    sprintf(valentine, "Unique valentine from %d. %s", getpid(), message_template);
-    valentine[strlen(valentine)] = '\0';
-
-    send(sock, valentine, strlen(valentine) + 1, 0);
-
-    printf("Admirer is waiting for answer\n");
-
     char buffer[BUFFER_SIZE];
-    ssize_t recv_result;
-
-    while (1) {
-        recv_result = recv(sock, buffer, sizeof(buffer), 0);
-        if (recv_result < 0) {
+    while(1) {
+        ssize_t recv_result = recv(sock, buffer, sizeof(buffer), 0);
+        if (recv_result == -1) {
             perror("Receive error");
-            close(sock);
             return 10;
         } else if (recv_result == 0) {
             continue;
         } else {
-            break;
+            if (strcmp(buffer, "Done") == 0) {
+                printf("Beauty goes to sleep\n");
+                break;
+            }
+
+            printf("Report: %s\n", buffer);
         }
     }
 
-    if (strcmp(buffer, "YES")) {
-        printf("There are more beauties around\n");
-    } else if (strcmp(buffer, "NO")) {
-        printf("I'm very happy\n");
-    } else {
-        printf("other\n");
-    }
+    send(sock, "Done", sizeof("Done"), 0);
+
+    printf("Done\n");
 
     close(sock);
 
