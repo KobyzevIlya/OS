@@ -11,6 +11,19 @@ void handle_sigint(int sig) {
     exit(0);
 }
 
+void father_block(int father) {
+    char father_check[10];
+    ssize_t father_recv_result;
+    father_recv_result = 0;
+    while (father_recv_result == 0) {
+        father_recv_result = recv(father, father_check, sizeof(father_check), 0);
+        if (father_recv_result == -1) {
+            perror("Receive error");
+            exit(10);
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         printf("Usage: %s <port> <num of admirers>\n", argv[0]);
@@ -89,8 +102,8 @@ int main(int argc, char *argv[]) {
     char report[512];
     memset(report, '\0', sizeof(report));
     sprintf(report, "Beauty is ready to accept valentines");
-    // report[strlen(report)] = '\0';
     send(father, report, strlen(report) + 1, 0);
+    father_block(father);
     
     int count = 0;
     int it = 0;
@@ -113,9 +126,8 @@ int main(int argc, char *argv[]) {
 
             memset(report, '\0', sizeof(report));
             sprintf(report, "Beauty received valentine №%d. Message: %s", it, buffer);
-            // report[strlen(report)] = '\0';
-            usleep(5000);
             send(father, report, strlen(report) + 1, 0);
+            father_block(father);
         }
     }
 
@@ -124,37 +136,33 @@ int main(int argc, char *argv[]) {
 
     memset(report, '\0', sizeof(report));
     sprintf(report, "Beauty carefully considered everything and chose the number %d", chosen + 1);
-    report[strlen(report)] = '\0';
-    usleep(5000);
     send(father, report, strlen(report) + 1, 0);
+    father_block(father);
 
     char yes[10] = "YES";
     yes[4] = '\0';
     char no[10] = "NO";
     no[3] = '\0';
     for (int i = 0; i < n; ++i) {
-        usleep(5000);
         if (i == chosen) {
             send(sockets[i], yes, strlen(yes) + 1, 0);
-
+    
             memset(report, '\0', sizeof(report));
             sprintf(report, "Beauty sent YES to admirer №%d", i + 1);
-            report[strlen(report)] = '\0';
             send(father, report, strlen(report) + 1, 0);
+            father_block(father);
         } else {
             send(sockets[i], no, strlen(no) + 1, 0);
 
             memset(report, '\0', sizeof(report));
             sprintf(report, "Beauty sent NO to admirer №%d", i + 1);
-            report[strlen(report)] = '\0';
             send(father, report, strlen(report) + 1, 0);
+            father_block(father);
         }
     }
 
     memset(report, '\0', sizeof(report));
     sprintf(report, "Done");
-    report[5] = '\0';
-    usleep(5000);
     send(father, report, strlen(report) + 1, 0);
 
     while (1) {

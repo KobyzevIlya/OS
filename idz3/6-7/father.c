@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     while(1) {
         ssize_t recv_result = recv(sock, buffer, sizeof(buffer), 0);
         if (recv_result == -1) {
-            perror("Receive error");
+            perror("Receive error father");
             return 10;
         } else if (recv_result == 0) {
             continue;
@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
                 printf("Beauty goes to sleep\n");
                 break;
             }
+            send(sock, "1", sizeof("1"), 0);
 
             printf("Report: %s\n", buffer);
         }
