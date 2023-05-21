@@ -16,6 +16,7 @@ void handle_sigint(int sig) {
     exit(0);
 }
 
+// чтобы send() не блокировала процесс при отправке в закрытый канал
 void sigpipe_handler(int signum) {
     
 }

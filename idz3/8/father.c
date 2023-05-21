@@ -74,13 +74,11 @@ int main(int argc, char *argv[]) {
                 printf("Beauty goes to sleep\n");
                 break;
             }
-            // send(sock, "1", sizeof("1"), 0);
 
             printf("Report: %s\n", buffer);
         }
     }
 
-    // send(sock, "Done", sizeof("Done"), 0);
 
     printf("Done\n");
 

@@ -22,5 +22,4 @@ gcc admirer.c common.h -o admirer
 ```
 
 ### Описание
-
-
+![Схема](./schema/4-5.png)
